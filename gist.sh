@@ -1,5 +1,10 @@
 #!/bin/bash
 
+## Variables and Constants ##
+url="https://api.github.com"
+curl_opts="-s -H 'User-Agent: CLI-Gist-Runner'"
+
+
 ## Options Parser ##
 while [[ $# -ge 1 ]]
 do
@@ -24,32 +29,32 @@ do
 			echo "    --version              version information"
 			echo "    --help                 this help text"
 			echo ""
-			echo "these options are used by bash-autocompletion so you don't need root to update the autocomplete-files"
-			echo "    -g --listgist [user]    output a list of gists for [user], default for authenticated user"
-			echo "    -s --liststarred        output a list of starred gists for authenticated user"
-#			echo "    -u --listuser %user%    output a list of users from github"
+			echo " these options are used by bash-autocompletion so you don't need to be root to update the autocomplete-file"
+			echo "    --ac-gist [user]    output a list of gists for [user], default for authenticated user"
+			echo "    --ac-starred        output a list of starred gists for authenticated user"
+			echo "    --ac-user %user%    output a list of users from github"
 			echo ""
 			exit
 		;;
-		-g|--listgist)
-			gistopt_listgist=1
+		--ac-gist)
+			gistac_gist=1
 			if [[ "$2" != -* ]] && [ "$2" != "" ]
 			then
-				gistopt_listgist_user="$2"
+				gistac_gist_user="$2"
 				shift
 			fi
 		;;
-		-s|--liststarred)
-			gistopt_listgist=1
-			gistopt_listgist_starred=1
+		--ac-starred)
+			gistac_gist=1
+			gistac_gist_starred=1
 		;;
-		-u|--listuser)
-			echo "the option -u or --listuser is not working yet"
+		--ac-user)
+			echo "the option --ac-user is not working yet"
 			exit
-			gistopt_listuser=1
+			gistac_user=1
 			if [[ "$2" != -* ]] && [ "$2" != "" ]
 			then
-				gistopt_listuser_user="$2"
+				gistac_user_name="$2"
 				shift
 			fi
 		;;
@@ -60,11 +65,6 @@ do
 	esac
 	shift
 done
-
-
-## Variables and Constants ##
-url="https://api.github.com"
-curl_opts="-s -H 'User-Agent: CLI-Gist-Runner'"
 
 
 ## Functions ##
@@ -79,24 +79,6 @@ function gitcurl {
 #	local gitcurl="$gitcurl_tmp"
 	echo $gitcurl_tmp
 }
-
-
-## Command Check ##
-# only on install/setup
-for cmd in 'bash' 'curl' 'jq'
-do
-	which $cmd > /dev/null 2>&1
-	if [ "$?" != "0" ]
-	then
-		echo "Command not found: $cmd"
-		cmd_not_found="true"
-	fi
-done
-if [ "$cmd_not_found" != "" ]
-then
-	echo "command not found, exit"
-	exit
-fi
 
 
 ## Initialisation ##
@@ -130,41 +112,6 @@ else
 fi
 
 
-## Install ##
-# only on install/setup
-# ?
-
-
-## AutoCompletion ##
-# only on install/setup
-if [ "$gistopt_update" == "1" ]
-then
-#	autocomplete=`echo $(gitcurl /gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'`
-	cat <<EOT > /tmp/gist_autocomplete
-_gist_runner()
-{
-    local cur prev opts gists
-#    COMPREPLY=()
-    cur="\${COMP_WORDS[COMP_CWORD]}"
-    prev="\${COMP_WORDS[COMP_CWORD-1]}"
-
-    opts="--help --version --update --upgrade --listgist --liststarred"
-    gists=\$(/data/GitHub/CLI-Gist-Runner/gist.sh --listgist)
-
-    if [[ \${cur} == -* ]] ; then
-        COMPREPLY=( \$(compgen -W "\${opts}" -- \${cur}) )
-    else
-        COMPREPLY=( \$(compgen -W "\${gists}" -- \${cur}) )
-    fi
-    return 0
-}
-complete -F _gist_runner gist.sh
-complete -F _gist_runner ./gist.sh
-EOT
-	#. /tmp/gist_autocomplete
-fi
-
-
 ## The Core ##
 
 if [ ! -f /tmp/cligistrunner_listgist ] || [ "$gistopt_update" == "1" ]
@@ -172,15 +119,16 @@ then
 	echo $(gitcurl /gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g' > /tmp/cligistrunner_listgist
 fi
 
-if [ "$gistopt_listgist" == "1" ]
+if [ "$gistac_gist" == "1" ]
 then
-	if [ "$gistopt_listgist_user" != "" ]
+	if [ "$gistac_gist_user" != "" ]
 	then
-		echo $(gitcurl /users/$gistopt_listgist_user/gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
-	elif [ "$gistopt_listgist_starred" == "1" ]
+		echo $(gitcurl /users/$gistac_gist_user/gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
+	elif [ "$gistac_gist_starred" == "1" ]
 	then
 		echo $(gitcurl /gists/starred) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
 	else
 		cat /tmp/cligistrunner_listgist
 	fi
 fi
+

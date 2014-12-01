@@ -25,6 +25,7 @@ by default 'gist.sh' should be 'gist'
 - http://stedolan.github.io/jq/tutorial/
 - http://www.debian-administration.org/article/317/An_introduction_to_bash_completion_part_2
 - https://developer.github.com/v3/auth/#working-with-two-factor-authentication
+- http://anonscm.debian.org/cgit/bash-completion/bash-completion.git/plain/README
 
 ## ToDo
 ### First
@@ -51,3 +52,4 @@ by default 'gist.sh' should be 'gist'
 - gist with multiple files, which could include/link to one-another, how to handle?
 - edit a gist ( download, open file in editor, upload on close ) ` > gist -e edit-script.py`
 - run a gist on a remote machine over SSH ` > gist -r user@server remote-script.sh`
+
