@@ -264,6 +264,9 @@ then
 
 		# build command to execute...
 		case $gist_command_type in
+		application/x-httpd-php)
+			cmd="php $gist_command"
+		;;
 		application/x-sh)
 			cmd="bash $gist_command"
 		;;
@@ -271,7 +274,8 @@ then
 			cmd="cat $gist_command"
 		;;
 		*)
-			echo "command type not implemented: $gist_command_type"
+			echo "> command type not implemented: $gist_command_type"
+			exit
 		;;
 		esac
 

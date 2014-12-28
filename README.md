@@ -12,15 +12,16 @@ Install CLI-Gist-Runner by executing this command:
 ===============
 
 ## Command-Line-Arguments
-how to handle different options on the command line...
-define how to parse for other people's gists, starred gists etc.
-what to do with each filetype, show a file before execution? or just run it...
+you can use gist to execute gists directly from github! commands are autocompleted with realtime information from github
+it's possible to execute the commands on remote servers with rsync and ssh and you can pass arguments through to the called script
 
-by default 'gist.sh' should be 'gist'
+some command examples for use with the 'gist' command
 - your own gist ` > gist my-script.php`
 - a starred gist ` > gist -s starred-script.rb`
 - someone else's gist ` > gist -o user public-script.pl`
-- execute with sudo ` > gist -? public-script.pl` (don't know which argument to use for this, obvious -s is already taken) (for testing -x)
+- run on a remote machine over SSH ` > gist -r user@server my-script.sh`
+- execute with sudo ` > gist -x public-script.pl`
+- a gist with extra arguments ` > gist my-script.php --my-script-option`
 
 ## ToRead
 - http://stedolan.github.io/jq/tutorial/
@@ -30,17 +31,12 @@ by default 'gist.sh' should be 'gist'
 
 ## ToDo
 ### First
-- run a gist on a remote machine over SSH ` > gist -r user@server remote-script.sh`
 - caching --ac-* (how long to cache? and which ones?)
 
 ### Later
-- autocomplete stop when a script is selected
 - check for fail-messages and/or errors in gitcurl
 
 ### Decide
-- autocomplete for subscripts
+- autocomplete for subscripts ?
 - settings file ?
-
-### Investigate
 - edit a gist ( download, open file in editor, upload on close ) ` > gist -e edit-script.py`
-
