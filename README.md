@@ -31,10 +31,11 @@ some command examples for use with the 'gist' command
 
 ## ToDo
 ### First
-- caching --ac-* (how long to cache? and which ones?)
+- check for fail-messages and/or errors in gitcurl
 
 ### Later
-- check for fail-messages and/or errors in gitcurl
+- caching --ac-* (how long to cache? and which ones?)
+- uploading 1 or more files to gist ` > gist -u new-dir/` or ` > gist -u new-file.sh`
 
 ### Decide
 - autocomplete for subscripts ?

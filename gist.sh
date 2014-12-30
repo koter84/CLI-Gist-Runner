@@ -35,6 +35,8 @@ do
 			echo "    --help              this help text"
 			echo ""
 			echo " these options are used by bash-autocompletion so you don't need to be root to update the autocomplete-file"
+			echo "    --ac-test           execute a couple of --ac-* actions to get a timing"
+			echo "    --ac-opts           output a list of arguments that gist accepts"
 			echo "    --ac-gist [user]    output a list of gists for [user], default for authenticated user"
 			echo "    --ac-starred        output a list of starred gists for authenticated user"
 			echo "    --ac-user %user%    output a list of users from github"
@@ -68,6 +70,19 @@ do
 		;;
 		-x)
 			gist_root=1
+		;;
+		--ac-test)
+			if [ "$2" == "timed" ]
+			then
+				gistac_test=1
+			else
+				time $0 --ac-test timed
+				exit
+			fi
+		;;
+		--ac-opts)
+			echo "-h -o -r -s -x --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
+			exit
 		;;
 		--ac-gist)
 			gistac_gist=1
@@ -106,7 +121,7 @@ do
 	shift
 done
 
-if [ "$gist_command" == "" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ]
+if [ "$gist_command" == "" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
 then
 	echo "you must give a command to execute"
 	exit
@@ -159,6 +174,32 @@ fi
 
 ## AutoComplete ##
 
+if [ "$gistac_test" == "1" ]
+then
+	# no github interaction with this command, no cache-ability
+#	echo "> --ac-opts"
+#	output=`$0 --ac-opts`
+
+	echo "> --ac-gist"
+	for i in "1 2 3 4 5" ; do
+		output=`$0 --ac-gist`
+	done
+	echo "> --ac-starred"
+	for i in "1 2 3 4 5" ; do
+		output=`$0 --ac-starred`
+
+	# not sure how usefull this is to test, mostly you'll be looking at your own scripts
+#	echo "> --ac-user octo"
+#	output=`$0 --ac-user octo`
+#	echo -n ">> "
+#	for user in $output
+#	do
+#		echo -n "$user "
+#		output=`$0 --ac-gist $user`
+#	done
+	exit
+fi
+
 if [ "$gistac_gist" == "1" ]
 then
 	if [ "$gistac_gist_user" != "" ]
@@ -166,8 +207,10 @@ then
 		echo $(gitcurl /users/$gistac_gist_user/gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
 	elif [ "$gistac_gist_starred" == "1" ]
 	then
+		# ToDo - caching
 		echo $(gitcurl /gists/starred) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
 	else
+		# ToDo - caching
 		echo $(gitcurl /gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
 	fi
 fi

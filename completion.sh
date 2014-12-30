@@ -36,7 +36,7 @@ _gist_runner()
 		opts=$(gist --ac-starred)
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 	elif [[ ${cur} == -* ]] ; then
-		opts="-o -r -s -x --upgrade --version --help --ac-gist --ac-starred --ac-user"
+		opts=$(gist --ac-opts)
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 	else
 		opts=$(gist --ac-gist)
