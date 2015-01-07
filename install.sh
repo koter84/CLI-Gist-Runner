@@ -6,7 +6,7 @@ then
 	sudo cp /data/GitHub/CLI-Gist-Runner/gist.sh /usr/local/bin/gist
 	sudo chmod +x /usr/local/bin/gist
 
-	gist_completionsdir=`pkg-config --variable=completionsdir bash-completion`
+	gist_completionsdir=$(pkg-config --variable=completionsdir bash-completion)
 	sudo cp /data/GitHub/CLI-Gist-Runner/completion.sh $gist_completionsdir/gist
 
 	exit
@@ -41,6 +41,10 @@ if [[ :$PATH: == *:"/usr/local/bin":* ]]
 then
 	gist_path="/usr/local/bin"
 fi
+if [[ $(which gist) == */gist ]]
+then
+	gist_path="$(dirname $(which gist))"
+fi
 if [ "$gist_path" == "" ]
 then
 	echo "no good directory found in $PATH"
@@ -48,8 +52,8 @@ then
 fi
 
 ## Completions Check
-gist_comp1=`pkg-config --variable=completionsdir bash-completion`
-gist_comp2=`pkg-config --variable=compatdir bash-completion`
+gist_comp1=$(pkg-config --variable=completionsdir bash-completion)
+gist_comp2=$(pkg-config --variable=compatdir bash-completion)
 if [ "$gist_comp2" != "" ] && [ -d "$gist_comp2" ]
 then
 	gist_completionsdir="$gist_comp2"
@@ -58,6 +62,7 @@ if [ "$gist_comp1" != "" ] && [ -d "$gist_comp1" ]
 then
 	gist_completionsdir="$gist_comp1"
 fi
+# ToDo - find existing completion file
 if [ "$gist_completionsdir" == "" ]
 then
 	echo "no bash-completion dir found"

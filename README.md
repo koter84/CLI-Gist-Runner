@@ -22,6 +22,8 @@ some command examples for use with the 'gist' command
 - run on a remote machine over SSH ` > gist -r user@server my-script.sh`
 - execute with sudo ` > gist -x public-script.pl`
 - a gist with extra arguments ` > gist my-script.php --my-script-option`
+- upload a file or directory to gist ` > gist -u dir/` or ` > gist -u file.sh`
+- upload output from another command to gist ` > cmd_with_output | gist` (-u not needed)
 
 ## ToRead
 - http://stedolan.github.io/jq/tutorial/
@@ -32,10 +34,11 @@ some command examples for use with the 'gist' command
 ## ToDo
 ### First
 - check for fail-messages and/or errors in gitcurl
+- --upgrade should check installed location of completion file
 
 ### Later
 - caching --ac-* (how long to cache? and which ones?)
-- uploading 1 or more files to gist ` > gist -u new-dir/` or ` > gist -u new-file.sh`
+- upload file from a pipe ` > cat pipe.sh | gist -u`
 
 ### Decide
 - autocomplete for subscripts ?
