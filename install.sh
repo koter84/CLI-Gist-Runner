@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# Koter84 Debug Installer
-if [ -d /data/GitHub/CLI-Gist-Runner ]
-then
-	sudo cp /data/GitHub/CLI-Gist-Runner/gist.sh /usr/local/bin/gist
-	sudo chmod +x /usr/local/bin/gist
-
-	gist_completionsdir=$(pkg-config --variable=completionsdir bash-completion)
-	sudo cp /data/GitHub/CLI-Gist-Runner/completion.sh $gist_completionsdir/gist
-
-	exit
-fi
-
 ## Command Check ##
 for cmd in 'bash' 'curl' 'jq'
 do
