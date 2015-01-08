@@ -35,6 +35,8 @@ _gist_runner()
 	elif [[ ${prev1} == -s ]] ; then
 		opts=$(gist --ac-starred)
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	elif [[ ${prev1} == -u ]] ; then
+		COMPREPLY=( $(compgen -f -- ${cur} ) )
 	elif [[ ${cur} == -* ]] ; then
 		opts=$(gist --ac-opts)
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
