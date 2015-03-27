@@ -25,22 +25,21 @@ some command examples for use with the 'gist' command
 - upload a file or directory to gist ` > gist -u dir/` or ` > gist -u file.sh`
 - upload output from another command to gist ` > cmd_with_output | gist` (-u not needed)
 
-## ToRead
-- http://stedolan.github.io/jq/tutorial/
-- http://www.debian-administration.org/article/317/An_introduction_to_bash_completion_part_2
-- https://developer.github.com/v3/auth/#working-with-two-factor-authentication
-- http://anonscm.debian.org/cgit/bash-completion/bash-completion.git/plain/README
+you can update the gist-script with ` > gist --upgrade`
 
 ## ToDo
 ### First
-- check for fail-messages and/or errors in gitcurl
-- --upgrade should check installed location of completion file
+- [ ] upload should by default only use the last part of the filename (not the whole path)
+- [ ] check for fail-messages and/or errors in gitcurl
+- [ ] --upgrade should check installed location of completion file
 
 ### Later
-- caching --ac-* (how long to cache? and which ones?)
-- upload file from a pipe ` > cat pipe.sh | gist -u`
+- [ ] edit a gist ( clone the repo, change files, commit, push... ( git clone git@github.com:gist_id.git ) ) ` > gist -e edit-script.py`
+- [ ] upload a update to an existing gist ` > gist -U file.sh` (or check for a file with the same name when uploading?)
 
-### Decide
-- autocomplete for subscripts ?
-- settings file ?
-- edit a gist ( download, open file in editor, upload on close ) ` > gist -e edit-script.py`
+## ToRead
+- (1) http://stedolan.github.io/jq/tutorial/
+- (2) http://www.debian-administration.org/article/317/An_introduction_to_bash_completion_part_2
+- (3) https://developer.github.com/v3/auth/#working-with-two-factor-authentication
+- (4) http://anonscm.debian.org/cgit/bash-completion/bash-completion.git/plain/README
+

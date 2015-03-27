@@ -2,12 +2,11 @@
 
 
 ## Catch input from a Pipe
-# http://stackoverflow.com/questions/5710957/bash-input-from-pipe
 if [[ $(tty) != /dev/* ]]
 then
 	# found pipe'd data, upload-mode
 	gist_upload=1
-	gist_upload_name=$(mktemp -t cligist-upload-XXXXXX)
+	gist_upload_name=$(mktemp -t gist-XXXXXX)
 	# move piped-data into file
 	piped=$(cat < /dev/stdin > $gist_upload_name)
 fi
@@ -35,11 +34,12 @@ do
 			echo "CLI-Gist-Runner"
 			echo "https://github.com/koter84/CLI-Gist-Runner"
 			echo ""
-			echo "$0 [options] [script-name]"
+			echo "$0 [options] [script-name] [options for your gist-script]"
 			echo ""
 			echo "    -o username         execute another user's gist"
 			echo "    -r user@server      execute gist on remote server via ssh"
 			echo "    -s                  execute a starred gist"
+			echo "    -u file|directory   upload a file or directory to gist (default with piped input)"
 			echo "    -x                  execute gist with sudo"
 			echo ""
 			echo "    --upgrade           upgrade gist.sh (this script)"
@@ -141,7 +141,7 @@ do
 			then
 				shift
 				# get remaining arguments and pass them through to gist_command
-				gist_command_arguments="$@"
+				gist_command_arguments="$*"
 			fi
 			break
 		;;
@@ -152,6 +152,7 @@ done
 if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
 then
 	echo "you must give a command to execute"
+	$0 --help
 	exit
 fi
 
@@ -172,13 +173,13 @@ function gist_dl
 function gist_ul
 {
 	local cmd="curl $curl_opts -u $token:x-oauth-basic -X POST -d '$1' $url/gists"
-	echo "$cmd"
-#	local gist_tmp=$($cmd)
+#	echo "$cmd"
+	local gist_tmp=$($cmd)
 
 # ToDo - catching errors
 #	echo "$gist_tmp" | jq '.error' ????
 
-#	echo $gist_tmp
+	echo $gist_tmp
 }
 
 function gist_encode
@@ -219,7 +220,7 @@ else
 		token=$(echo "$token_curl" | jq '.token' | sed 's/\"//g')
 	fi
 
-	token_check=$(echo $(gist_dl /user) | jq '.login' | sed 's/\"//g')
+	token_check=$(gist_dl /user | jq '.login' | sed 's/\"//g')
 	if [ "$token_check" != "" ]
 	then
 		echo $token > ~/.gisttoken
@@ -233,9 +234,8 @@ fi
 ## AutoComplete ##
 if [ "$gistac_test" == "1" ]
 then
-	# no github interaction with this command, no cache-ability
-#	echo "> --ac-opts"
-#	output=$($0 --ac-opts)
+	echo "> --ac-opts"
+	output=$($0 --ac-opts)
 
 	echo -n "> --ac-gist     "
 	for i in {1..10} ; do
@@ -252,35 +252,45 @@ then
 	echo " done"
 
 	# not sure how usefull this is to test, mostly you'll be looking at your own scripts
-#	echo "> --ac-user octo"
-#	output=$($0 --ac-user octo)
-#	echo -n ">> "
-#	for user in $output
-#	do
-#		echo -n "$user "
-#		output=$($0 --ac-gist $user)
-#	done
+	echo "> --ac-user octo"
+	output=$($0 --ac-user octo)
+	echo -n ">> "
+	for user in $output
+	do
+		echo -n "$user "
+		output=$($0 --ac-gist $user)
+	done
+
 	exit
 fi
 
 if [ "$gistac_gist" == "1" ]
 then
+	cache_time="+1"
 	if [ "$gistac_gist_user" != "" ]
 	then
-		echo $(gist_dl /users/$gistac_gist_user/gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
+		gist_dl "/users/${gistac_gist_user}/gists" | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
 	elif [ "$gistac_gist_starred" == "1" ]
 	then
-		# ToDo - caching
-		echo $(gist_dl /gists/starred) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
+		cache_file="/tmp/gistCache_mygists"
+		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
+		then
+			gist_dl /gists/starred | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
+		fi
+		cat ${cache_file}
 	else
-		# ToDo - caching
-		echo $(gist_dl /gists) | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
+		cache_file="/tmp/gistCache_starred"
+		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
+		then
+			gist_dl /gists | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
+		fi
+		cat ${cache_file}
 	fi
 fi
 
 if [ "$gistac_user" == "1" ]
 then
-	echo $(gist_dl /search/users?q=$gistac_user_name) | jq '.items[].login' | sed 's/\"//g' | sed 's/\n/ /g'
+	gist_dl "/search/users?q=${gistac_user_name}" | jq '.items[].login' | sed 's/\"//g' | sed 's/\n/ /g'
 fi
 
 
@@ -290,10 +300,10 @@ then
 	if [ -f "$gist_upload_name" ]
 	then
 		# ask to change filename
-		read -p "change upload-filename? [$gist_upload_name]" gist_upload_filename </dev/tty
+		read -p "change upload-filename? [$(basename "$gist_upload_name")] " gist_upload_filename </dev/tty
 		if [ "$gist_upload_filename" == "" ]
 		then
-			gist_upload_filename="$gist_upload_name"
+			gist_upload_filename="$(basename "$gist_upload_name")"
 		fi
 
 		content=$(gist_encode $gist_upload_name)
@@ -303,14 +313,14 @@ then
 	then
 		for file in $(ls $gist_upload_name)
 		do
-			if [ -d $gist_upload_name/$file ]
+			if [ -d "$gist_upload_name/$file" ]
 			then
 				# ToDo - use -f|--force to overrride?
 				echo "recursion not supported! (found dir $file inside dir $gist_upload_name)"
 				exit
 			fi
 
-			content=$(gist_encode $gist_upload_name/$file)
+			content=$(gist_encode "$gist_upload_name/$file")
 			files_tmp+="$comma"'"'"$file"'": { "content": "'"$content"'" }'
 			comma=", "
 		done
@@ -346,7 +356,7 @@ then
 
 	if [ "$gist_starred" == "1" ]
 	then
-		check_cmd=$($0 --ac-starred|grep $gist_command)
+		check_cmd=$($0 --ac-starred|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
 			echo "command seems wrong"
@@ -355,11 +365,11 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(echo $(gist_dl /gists/starred) | jq '.[] | if .files[].filename == "'$gist_command'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		gist_id=$(gist_dl /gists/starred | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
 
 	elif [ "$gist_otheruser" == "1" ]
 	then
-		check_user=$($0 --ac-user $gist_otheruser_name|grep -e ^$gist_otheruser_name\$)
+		check_user=$($0 --ac-user "$gist_otheruser_name"|grep -e "^$gist_otheruser_name\$")
 		if [ "$check_user" != "$gist_otheruser_name" ]
 		then
 			echo "otheruser seems wrong"
@@ -367,7 +377,7 @@ then
 			echo "$check_user"
 		fi
 
-		check_cmd=$($0 --ac-gist $gist_otheruser_name|grep $gist_command)
+		check_cmd=$($0 --ac-gist "$gist_otheruser_name"|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
 			echo "command seems wrong"
@@ -376,11 +386,11 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(echo $(gist_dl /users/$gist_otheruser_name/gists) | jq '.[] | if .files[].filename == "'$gist_command'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		gist_id=$(gist_dl "/users/${gist_otheruser_name}/gists" | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
 
 	else # your own gist
 
-		check_cmd=$($0 --ac-gist|grep $gist_command)
+		check_cmd=$($0 --ac-gist|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
 			echo "command seems wrong"
@@ -389,7 +399,7 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(echo $(gist_dl /gists) | jq '.[] | if .files[].filename == "'$gist_command'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		gist_id=$(gist_dl /gists | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
 
 	fi
 
@@ -398,7 +408,7 @@ then
 	then
 		# make tmp-dir
 		gist_tmp=$(mktemp -dt cligist-XXXXXX)
-		if [ ! -d $gist_tmp ]
+		if [ ! -d "$gist_tmp" ]
 		then
 			echo "tmp-dir not created...."
 			echo "$gist_tmp"
@@ -406,19 +416,19 @@ then
 		fi
 
 		# download all gist-files
-		gist_files=$(echo $(gist_dl /gists/$gist_id) | jq '.files[].raw_url' | sed 's/\"//g' | sed 's/\n/ /g')
+		gist_files=$(gist_dl "/gists/$gist_id" | jq '.files[].raw_url' | sed 's/\"//g' | sed 's/\n/ /g')
 		for raw_url in $gist_files
 		do
-			file="$gist_tmp/$(basename $raw_url)"
-			wget -q -O $file $raw_url
-			chmod +x $file
+			file="$gist_tmp/$(basename "$raw_url")"
+			wget -q -O "$file" "$raw_url"
+			chmod +x "$file"
 		done
 
 		# detect file-type
-		gist_command_type=$(echo $(gist_dl /gists/$gist_id) | jq '.files[] | if .filename == "'$gist_command'" then .type else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		gist_command_type=$(gist_dl "/gists/$gist_id" | jq '.files[] | if .filename == "'"$gist_command"'" then .type else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
 
 		# goto tmp-dir
-		cd $gist_tmp
+		cd "$gist_tmp"
 
 		# add extra arguments to command
 		gist_command="$gist_command $gist_command_arguments"
@@ -451,17 +461,17 @@ then
 			#echo "> going remote: $gist_remote_name"
 			rsync="rsync --recursive ./ $gist_remote_name:$gist_tmp"
 			#echo "> cmd: $rsync"
-			eval $rsync
-			cmd="ssh $gist_remote_name 'cd $gist_tmp; $cmd; rm -r $gist_tmp'"
+			eval "$rsync"
+			cmd="ssh $gist_remote_name 'hostname; cd $gist_tmp; $cmd; rm -r $gist_tmp'"
 			#echo "> cmd: $cmd"
-			eval $cmd
+			eval "$cmd"
 		else
 			#echo "> cmd: $cmd"
-			eval $cmd
+			eval "$cmd"
 		fi
 
 		# remove tmp-dir
-		rm -r $gist_tmp
+		rm -r "$gist_tmp"
 
 	else
 		echo "> problem! no gist-id..."
