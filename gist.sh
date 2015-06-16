@@ -44,7 +44,8 @@ do
 			echo ""
 			echo "    --upgrade           upgrade gist.sh (this script)"
 			echo "    --version           version information"
-			echo "    --help              this help text"
+			echo "    -h --help           this help text"
+			echo "    --setup             setup and configure your GitHub-access-token"
 			echo ""
 			echo " these options are used by bash-autocompletion so you don't need to be root to update the autocomplete-file"
 			echo "    --ac-test           execute a couple of --ac-* actions to get a timing"
@@ -54,6 +55,9 @@ do
 			echo "    --ac-user %user%    output a list of users from github"
 			echo ""
 			exit
+		;;
+		--setup)
+			gist_setup=1
 		;;
 		-o)
 			gist_otheruser=1
@@ -228,6 +232,11 @@ else
 		echo "Failed to connect to GitHub.com with OAuth Token..."
 		exit
 	fi
+fi
+if [ "$gist_setup" == "1" ]
+then
+	echo "Setup Done."
+	exit
 fi
 
 

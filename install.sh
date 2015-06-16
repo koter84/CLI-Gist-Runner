@@ -62,3 +62,7 @@ sudo wget -q -O $gist_path/gist https://raw.githubusercontent.com/koter84/CLI-Gi
 sudo chmod +x $gist_path/gist
 
 sudo wget -q -O $gist_completionsdir/gist https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/master/completion.sh
+
+## Setup ##
+gist --setup
+
