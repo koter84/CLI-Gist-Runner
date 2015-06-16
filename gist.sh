@@ -176,7 +176,8 @@ function gist_dl
 
 function gist_ul
 {
-	local cmd="curl $curl_opts -u $token:x-oauth-basic -X POST -d '$1' $url/gists"
+	echo "$1" > /tmp/gist_json_upload_file
+	local cmd="curl $curl_opts -u $token:x-oauth-basic -X POST --data @/tmp/gist_json_upload_file $url/gists"
 #	echo "$cmd"
 	local gist_tmp=$($cmd)
 
