@@ -12,7 +12,7 @@ do
 done
 if [ "$cmd_not_found" != "" ]
 then
-	echo "command not found, exit"
+	echo "some commands not found"
 	exit
 fi
 
