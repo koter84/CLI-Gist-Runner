@@ -26,7 +26,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.0.0"
+			echo "v1.1.0"
 			exit
 		;;
 		-h|--help)
@@ -41,6 +41,7 @@ do
 			echo "    -s                  execute a starred gist"
 			echo "    -u file|directory   upload a file or directory to gist (default with piped input)"
 			echo "    -x                  execute gist with sudo"
+			echo "    -w[seconds]         execute a gist using watch"
 			echo ""
 			echo "    --upgrade           upgrade gist.sh (this script)"
 			echo "    --version           version information"
@@ -98,6 +99,13 @@ do
 		-x)
 			gist_root=1
 		;;
+		-w)
+			gist_watch=5
+		;;
+		-w*)
+			# strip -w from $1
+			gist_watch=${1#-w}
+		;;
 		--ac-test)
 			if [ "$2" == "timed" ]
 			then
@@ -108,7 +116,7 @@ do
 			fi
 		;;
 		--ac-opts)
-			echo "-h -o -r -s -u -x --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
+			echo "-h -o -r -s -u -x -w --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
 			exit
 		;;
 		--ac-gist)
@@ -459,6 +467,11 @@ then
 			exit
 		;;
 		esac
+
+		if [ "$gist_watch" != "" ]
+		then
+			cmd="watch -n$gist_watch $cmd"
+		fi
 
 		if [ "$gist_root" == "1" ]
 		then
