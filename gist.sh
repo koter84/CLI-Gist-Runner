@@ -26,7 +26,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.1.0"
+			echo "v1.2.0"
 			exit
 		;;
 		-h|--help)
@@ -36,12 +36,13 @@ do
 			echo ""
 			echo "$0 [options] [script-name] [options for your gist-script]"
 			echo ""
+			echo "    -e script-name      edit a gist-script on local machine"
 			echo "    -o username         execute another user's gist"
 			echo "    -r user@server      execute gist on remote server via ssh"
 			echo "    -s                  execute a starred gist"
 			echo "    -u file|directory   upload a file or directory to gist (default with piped input)"
-			echo "    -x                  execute gist with sudo"
 			echo "    -w[seconds]         execute a gist using watch"
+			echo "    -x                  execute gist with sudo"
 			echo ""
 			echo "    --upgrade           upgrade gist.sh (this script)"
 			echo "    --version           version information"
@@ -59,6 +60,17 @@ do
 		;;
 		--setup)
 			gist_setup=1
+		;;
+		-e)
+			gist_edit=1
+			if [[ "$2" != -* ]] && [ "$2" != "" ]
+			then
+				gist_edit_name="$2"
+				shift
+			else
+				echo "-e expects a gist script-name"
+				exit
+			fi
 		;;
 		-o)
 			gist_otheruser=1
@@ -116,7 +128,7 @@ do
 			fi
 		;;
 		--ac-opts)
-			echo "-h -o -r -s -u -x -w --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
+			echo "-e -h -o -r -s -u -x -w --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
 			exit
 		;;
 		--ac-gist)
@@ -161,7 +173,7 @@ do
 	shift
 done
 
-if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
+if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gist_edit" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
 then
 	echo "you must give a command to execute"
 	$0 --help
@@ -363,6 +375,76 @@ then
 
 	# upload
 	gist_ul '{ "description": "'"$gist_upload_desc"'", "public": '"$gist_upload_public"', '"$gist_upload_files"' }'
+
+	exit
+fi
+
+
+## Editor ##
+if [ "$gist_edit" == "1" ]
+then
+	# make temp-dir
+	gist_tmp=$(mktemp -dt cligistedit-XXXXXX)
+
+	# get gist-id for cloning
+	gist_id=$(gist_dl /gists | jq '.[] | if .files[].filename == "'"$gist_edit_name"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+
+	# git clone
+	git clone -q git@gist.github.com:${gist_id}.git $gist_tmp
+
+	# echo instructions for editing
+	# ToDo - make instructions a bit clearer
+	echo ""
+	echo "You are now working in a bash subshell"
+	echo "This is a Git repository of '${gist_edit_name}', edit the code, commit it and push it back upstream"
+	echo "when you are done use 'exit' to remove this temporary directory and go back to where you came from"
+	echo ""
+
+	# cd to temp dir
+	cd $gist_tmp
+
+	# start a while-loop to edit git until everything is committed and pushed or discarded
+	while true
+	do
+		# change the bash-prompt to show you are in GistEdit
+		export PS1="[GistEdit ${gist_edit_name}]\$ "
+
+		# start bash in the subshell
+		${SHELL}
+
+		# check if git is clean (everything committed and pushed)
+		git_update=`git remote update` #be quiet
+		git_commit=`git clean -n; git status --porcelain`
+		git_push=`git log --branches --not --remotes`
+
+		if [ "$git_commit" != "" ] || [ "$git_push" != "" ]
+		then
+			echo ""
+			echo "+---------------------------------------------------+"
+			if [ "$git_commit" != "" ]; then
+				echo "|  There are uncommitted changes in the repository  |"
+			fi
+			if [ "$git_push" != "" ]; then
+				echo "|    There are unpushed changes in the repository   |"
+			fi
+			echo "+---------------------------------------------------+"
+			echo ""
+
+			# ToDo - maybe change to make sure you are OK with discarding your changes
+			read -p "Do you want to go back into the repository ? [Y/n] " revisit_repo
+			if [ "$revisit_repo" == "n" ] || [ "$revisit_repo" == "N" ]
+			then
+				# stop the while-loop
+				break
+			fi
+		fi
+	done
+
+	# remove the temp-dir
+	if [ -d $gist_tmp ]
+	then
+		rm -rf ${gist_tmp}
+	fi
 
 	exit
 fi
