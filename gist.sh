@@ -15,6 +15,53 @@ fi
 ## Variables and Constants ##
 url="https://api.github.com"
 curl_opts="-s -H 'User-Agent: CLI-Gist-Runner'"
+if [ -f ~/.gisttoken ]
+then
+	token=$(cat ~/.gisttoken)
+fi
+
+## Functions ##
+function gist_dl
+{
+	local cmd="curl $curl_opts -u $token:x-oauth-basic $url$1"
+	#echo "$cmd"
+	local gist_tmp=$($cmd)
+
+# ToDo - catching errors
+#	echo "$gist_tmp" | jq '.error' ????
+
+	echo $gist_tmp
+}
+
+function gist_ul
+{
+	echo "$1" > /tmp/gist_json_upload_file
+	local cmd="curl $curl_opts -u $token:x-oauth-basic -X POST --data @/tmp/gist_json_upload_file $url/gists"
+#	echo "$cmd"
+	local gist_tmp=$($cmd)
+
+# ToDo - catching errors
+#	echo "$gist_tmp" | jq '.error' ????
+
+	echo $gist_tmp
+}
+
+function gist_encode
+{
+	JSON_RAW=$(cat $1)
+	JSON_RAW=${JSON_RAW//\\/\\\\} # \
+	JSON_RAW=${JSON_RAW//\//\\\/} # /
+	JSON_RAW=${JSON_RAW//\'/\\\'} # ' (not strictly needed ?)
+	JSON_RAW=${JSON_RAW//\"/\\\"} # "
+	JSON_RAW=${JSON_RAW//	/\\t} # \t (tab)
+	JSON_RAW=${JSON_RAW//
+/\\\n} # \n (newline)
+	JSON_RAW=${JSON_RAW//^M/\\\r} # \r (carriage return)
+	JSON_RAW=${JSON_RAW//^L/\\\f} # \f (form feed)
+	JSON_RAW=${JSON_RAW//^H/\\\b} # \b (backspace)
+
+	echo "$JSON_RAW"
+}
 
 
 ## Options Parser ##
@@ -22,11 +69,20 @@ while [[ $# -ge 1 ]]
 do
 	case $1 in
 		--upgrade)
-			curl -s https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/master/install.sh | bash
+			version_local=$(gist --version|sed s/'v'//)
+			version_remote=$(gist_dl "/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].name' | sed 's/\"//g')
+			if [ "$version_local" == "$version_remote" ]
+			then
+				echo "you have v$version_local which is the latest release"
+			else
+				echo "upgrade from v$version_local to v$version_remote"
+				version_remote_hash=$(gist_dl "/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].commit.sha' | sed 's/\"//g')
+				curl -s https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/$version_remote_hash/install.sh | bash
+			fi
 			exit
 		;;
 		--version)
-			echo "v1.2.0"
+			echo "v1.2.1"
 			exit
 		;;
 		-h|--help)
@@ -128,7 +184,7 @@ do
 			fi
 		;;
 		--ac-opts)
-			echo "-e -h -o -r -s -u -x -w --upgrade --version --help --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
+			echo "-e -h -o -r -s -u -x -w --help --setup --upgrade --version --ac-test --ac-opts --ac-gist --ac-starred --ac-user"
 			exit
 		;;
 		--ac-gist)
@@ -173,7 +229,7 @@ do
 	shift
 done
 
-if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gist_edit" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
+if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gist_edit" != "1" ] && [ "$gist_setup" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
 then
 	echo "you must give a command to execute"
 	$0 --help
@@ -181,55 +237,9 @@ then
 fi
 
 
-## Functions ##
-function gist_dl
-{
-	local cmd="curl $curl_opts -u $token:x-oauth-basic $url$1"
-	#echo "$cmd"
-	local gist_tmp=$($cmd)
-
-# ToDo - catching errors
-#	echo "$gist_tmp" | jq '.error' ????
-
-	echo $gist_tmp
-}
-
-function gist_ul
-{
-	echo "$1" > /tmp/gist_json_upload_file
-	local cmd="curl $curl_opts -u $token:x-oauth-basic -X POST --data @/tmp/gist_json_upload_file $url/gists"
-#	echo "$cmd"
-	local gist_tmp=$($cmd)
-
-# ToDo - catching errors
-#	echo "$gist_tmp" | jq '.error' ????
-
-	echo $gist_tmp
-}
-
-function gist_encode
-{
-	JSON_RAW=$(cat $1)
-	JSON_RAW=${JSON_RAW//\\/\\\\} # \
-	JSON_RAW=${JSON_RAW//\//\\\/} # /
-	JSON_RAW=${JSON_RAW//\'/\\\'} # ' (not strictly needed ?)
-	JSON_RAW=${JSON_RAW//\"/\\\"} # "
-	JSON_RAW=${JSON_RAW//	/\\t} # \t (tab)
-	JSON_RAW=${JSON_RAW//
-/\\\n} # \n (newline)
-	JSON_RAW=${JSON_RAW//^M/\\\r} # \r (carriage return)
-	JSON_RAW=${JSON_RAW//^L/\\\f} # \f (form feed)
-	JSON_RAW=${JSON_RAW//^H/\\\b} # \b (backspace)
-
-	echo "$JSON_RAW"
-}
-
-
 ## Initialisation ##
-if [ -f ~/.gisttoken ]
+if [ "$token" == "" ]
 then
-	token=$(cat ~/.gisttoken)
-else
 	echo -n "Do you want to manually generate a Personal-Access-Token [y/N]? "
 	read manual_token </dev/tty
 	if [ "$manual_token" == "Y" ] || [ "$manual_token" == "y" ]

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Command Check ##
-for cmd in 'bash' 'curl' 'jq'
+for cmd in 'bash' 'git' 'curl' 'jq'
 do
 	which $cmd > /dev/null 2>&1
 	if [ "$?" != "0" ]
@@ -57,11 +57,14 @@ then
 	exit
 fi
 
+## Get Latest Tag ##
+version_remote_hash=$(curl -s "https://api.github.com/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].commit.sha' | sed 's/\"//g')
+
 ## Install ##
-sudo wget -q -O $gist_path/gist https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/master/gist.sh
+sudo wget -q -O $gist_path/gist https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/$version_remote_hash/gist.sh
 sudo chmod +x $gist_path/gist
 
-sudo wget -q -O $gist_completionsdir/gist https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/master/completion.sh
+sudo wget -q -O $gist_completionsdir/gist https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/$version_remote_hash/completion.sh
 
 ## Setup ##
 gist --setup
