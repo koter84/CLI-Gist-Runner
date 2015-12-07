@@ -82,7 +82,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.2.1"
+			echo "v1.2.2"
 			exit
 		;;
 		-h|--help)
@@ -447,6 +447,9 @@ then
 				# stop the while-loop
 				break
 			fi
+		else
+			# everything is clean, stop the while-loop
+			break
 		fi
 	done
 
