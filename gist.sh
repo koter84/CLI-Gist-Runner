@@ -238,7 +238,7 @@ fi
 
 
 ## Initialisation ##
-if [ "$token" == "" ]
+if [ "$token" == "" ] || [ "$token" == "null" ]
 then
 	echo -n "Do you want to manually generate a Personal-Access-Token [y/N]? "
 	read manual_token </dev/tty
