@@ -309,20 +309,20 @@ then
 	cache_time="+1"
 	if [ "$gistac_gist_user" != "" ]
 	then
-		gist_dl "/users/${gistac_gist_user}/gists" | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g'
+		gist_dl "/users/${gistac_gist_user}/gists" | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g'
 	elif [ "$gistac_gist_starred" == "1" ]
 	then
 		cache_file="/tmp/gistCache_mygists"
 		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
 		then
-			gist_dl /gists/starred | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
+			gist_dl /gists/starred | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
 		fi
 		cat ${cache_file}
 	else
 		cache_file="/tmp/gistCache_starred"
 		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
 		then
-			gist_dl /gists | jq '.[].files[].filename' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
+			gist_dl /gists | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
 		fi
 		cat ${cache_file}
 	fi

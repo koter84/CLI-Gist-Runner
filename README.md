@@ -29,6 +29,10 @@ some command examples for use with the 'gist' command
 
 you can update the gist-script with ` > gist --upgrade`
 
+## Hiding files from CLI-Gist-Runner
+If you have a gist with multiple files, for instance because of a library you include in the main script, it's nice to hide the lib
+from autocomplete. To do this, you name the library file with ~~ at the beginning of the filename, like `~~mylibrary.sh`
+
 ## ToDo
 ### First
 - [ ] check for fail-messages and/or errors in gitcurl
