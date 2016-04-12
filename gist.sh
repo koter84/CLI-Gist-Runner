@@ -70,13 +70,13 @@ do
 	case $1 in
 		--upgrade)
 			version_local=$(gist --version|sed s/'v'//)
-			version_remote=$(gist_dl "/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].name' | sed 's/\"//g')
+			version_remote=$(curl $curl_opts "$url/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].name' | sed 's/\"//g')
 			if [ "$version_local" == "$version_remote" ]
 			then
 				echo "you have v$version_local which is the latest release"
 			else
 				echo "upgrade from v$version_local to v$version_remote"
-				version_remote_hash=$(gist_dl "/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].commit.sha' | sed 's/\"//g')
+				version_remote_hash=$(curl $curl_opts "$url/repos/koter84/CLI-Gist-Runner/tags" | jq '.[0].commit.sha' | sed 's/\"//g')
 				curl -s https://raw.githubusercontent.com/koter84/CLI-Gist-Runner/$version_remote_hash/install.sh | bash
 			fi
 			exit
