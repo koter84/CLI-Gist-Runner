@@ -25,17 +25,16 @@ some command examples for use with the 'gist' command
 - a gist with extra arguments ` > gist my-script.php --my-script-option`
 - upload a file or directory to gist ` > gist -u dir/` or ` > gist -u file.sh`
 - upload output from another command to gist ` > cmd_with_output | gist` (-u not needed)
+- edit a gist locally ` > gist -e script-to-edit.py`
 
 you can update the gist-script with ` > gist --upgrade`
 
 ## ToDo
 ### First
-- [ ] upload should by default only use the last part of the filename (not the whole path)
 - [ ] check for fail-messages and/or errors in gitcurl
 - [ ] --upgrade should check installed location of completion file
 
 ### Later
-- [ ] edit a gist ( clone the repo, change files, commit, push... ( git clone git@github.com:gist_id.git ) ) ` > gist -e edit-script.py`
 - [ ] upload a update to an existing gist ` > gist -U file.sh` (or check for a file with the same name when uploading?)
 
 ## ToRead
