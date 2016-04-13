@@ -337,6 +337,9 @@ fi
 ## Uploader ##
 if [ "$gist_upload" == "1" ]
 then
+	# make temp-dir for files
+	gist_move_tmp=$(mktemp -dt cligistmove-XXXXXX)
+
 	if [ -f "$gist_upload_name" ]
 	then
 		# ask to change filename
@@ -346,8 +349,8 @@ then
 			gist_upload_filename="$(basename "$gist_upload_name")"
 		fi
 
-		content=$(gist_encode $gist_upload_name)
-		files_tmp='"'"$gist_upload_filename"'": { "content": "'"$content"'" }'
+		# move file to temp-dir
+		cp "$gist_upload_name" "$gist_move_tmp/$gist_upload_filename"
 
 	elif [ -d "$gist_upload_name" ]
 	then
@@ -355,21 +358,23 @@ then
 		do
 			if [ -d "$gist_upload_name/$file" ]
 			then
-				# ToDo - use -f|--force to overrride?
-				echo "recursion not supported! (found dir $file inside dir $gist_upload_name)"
+				echo "recursion not supported by GitHub Gist! (found dir '$file' inside dir '$gist_upload_name')"
+				if [ "$gist_move_tmp/" != "/" ]; then
+					rm -rf "$gist_move_tmp/"
+				fi
 				exit
 			fi
 
-			content=$(gist_encode "$gist_upload_name/$file")
-			files_tmp+="$comma"'"'"$file"'": { "content": "'"$content"'" }'
-			comma=", "
+			# move files to temp-dir
+			cp "$gist_upload_name/$file" "$gist_move_tmp/"
 		done
 
 	else
 		echo "$gist_upload_name is not a file nor a directory"
 	fi
 
-	gist_upload_files='"files": { '"$files_tmp"' }'
+	# upload only 1 emtpy file called empty.file containing 'empty.file'
+	gist_upload_files='"files": { "empty.file": { "content": "empty.file" } }'
 
 	# ask for a description
 	read -p "write a simple (one-line) description: " gist_upload_desc </dev/tty
@@ -383,8 +388,40 @@ then
 		gist_upload_public="false"
 	fi
 
-	# upload
-	gist_ul '{ "description": "'"$gist_upload_desc"'", "public": '"$gist_upload_public"', '"$gist_upload_files"' }'
+	# upload empty.file
+	new_upload=$(gist_ul '{ "description": "'"$gist_upload_desc"'", "public": '"$gist_upload_public"', '"$gist_upload_files"' }')
+
+	# make temp-dir
+	gist_tmp=$(mktemp -dt cligistupload-XXXXXX)
+
+	# get gist-id for cloning
+	gist_id=$(echo "$new_upload" | jq .id | sed 's/\"//g' )
+
+	# git clone the new gist
+	git clone -q git@gist.github.com:${gist_id}.git "$gist_tmp"
+
+	# git rm empty.file
+	result_rm=$(cd "$gist_tmp" && git rm empty.file)
+
+	# move files from temp-dir into git-clone dir
+	mv "$gist_move_tmp"/* "$gist_tmp/"
+
+	# git add
+	result_add=$(cd "$gist_tmp" && git add -A .)
+
+	# git commit
+	result_commit=$(cd "$gist_tmp" && git commit --amend -m "Initial commit")
+
+	# git push
+	result_push=$(cd "$gist_tmp" && git push -f --quiet)
+
+	# clean-up temp-dir and git-clone dir
+	if [ "$gist_move_tmp/" != "/" ]; then
+		rm -rf "$gist_move_tmp/"
+	fi
+	if [ "$gist_tmp/" != "/" ]; then
+		rm -rf "$gist_tmp/"
+	fi
 
 	exit
 fi
@@ -403,7 +440,6 @@ then
 	git clone -q git@gist.github.com:${gist_id}.git $gist_tmp
 
 	# echo instructions for editing
-	# ToDo - make instructions a bit clearer
 	echo ""
 	echo "You are now working in a bash subshell"
 	echo "This is a Git repository of '${gist_edit_name}', edit the code, commit it and push it back upstream"
@@ -440,9 +476,9 @@ then
 			echo "+---------------------------------------------------+"
 			echo ""
 
-			# ToDo - maybe change to make sure you are OK with discarding your changes
-			read -p "Do you want to go back into the repository ? [Y/n] " revisit_repo
-			if [ "$revisit_repo" == "n" ] || [ "$revisit_repo" == "N" ]
+			# make sure the user is OK with discarding the changes
+			read -p "Are you sure you want to discard your changes ? [y/N] " discard_repo
+			if [ "$discard_repo" == "y" ] || [ "$discard_repo" == "Y" ]
 			then
 				# stop the while-loop
 				break
