@@ -65,7 +65,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.2.3"
+			echo "v1.3.0"
 			exit
 		;;
 		-h|--help)
