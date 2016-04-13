@@ -46,23 +46,6 @@ function gist_ul
 	echo $gist_tmp
 }
 
-function gist_encode
-{
-	JSON_RAW=$(cat $1)
-	JSON_RAW=${JSON_RAW//\\/\\\\} # \
-	JSON_RAW=${JSON_RAW//\//\\\/} # /
-	JSON_RAW=${JSON_RAW//\'/\\\'} # ' (not strictly needed ?)
-	JSON_RAW=${JSON_RAW//\"/\\\"} # "
-	JSON_RAW=${JSON_RAW//	/\\t} # \t (tab)
-	JSON_RAW=${JSON_RAW//
-/\\\n} # \n (newline)
-	JSON_RAW=${JSON_RAW//^M/\\\r} # \r (carriage return)
-	JSON_RAW=${JSON_RAW//^L/\\\f} # \f (form feed)
-	JSON_RAW=${JSON_RAW//^H/\\\b} # \b (backspace)
-
-	echo "$JSON_RAW"
-}
-
 
 ## Options Parser ##
 while [[ $# -ge 1 ]]
