@@ -3,6 +3,8 @@ CLI-Gist-Runner
 
 Command Line Interface to execute scripts directly from Gist
 
+_Warning: Executing code from Gists can be dangerous. Use at your own risk._
+
 ===============
 
 Install CLI-Gist-Runner by executing this command:
