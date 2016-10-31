@@ -39,6 +39,7 @@ from autocomplete. To do this, you name the library file with ~~ at the beginnin
 ### First
 - [ ] check for fail-messages and/or errors in gitcurl
 - [ ] --upgrade should check installed location of completion file
+- [ ] pass along a ENV with the directory from which gist was called (pwd) as GIST_CALL_PWD
 
 ### Later
 - [ ] upload a update to an existing gist ` > gist -U file.sh` (or check for a file with the same name when uploading?)
