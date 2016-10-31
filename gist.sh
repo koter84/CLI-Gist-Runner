@@ -538,6 +538,9 @@ then
 
 	if [ "$gist_id" != "" ]
 	then
+		# setup environment variables
+		export GIST_PWD=$(pwd)
+
 		# make tmp-dir
 		gist_tmp=$(mktemp -dt cligist-XXXXXX)
 		if [ ! -d "$gist_tmp" ]

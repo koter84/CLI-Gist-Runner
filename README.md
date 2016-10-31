@@ -31,6 +31,10 @@ some command examples for use with the 'gist' command
 
 you can update the gist-script with ` > gist --upgrade`
 
+## Environment Variables
+when you run a script through gist you can use the following environment variables in your script
+- GIST_PWD - the working dir from where the gist command was called
+
 ## Hiding files from CLI-Gist-Runner
 If you have a gist with multiple files, for instance because of a library you include in the main script, it's nice to hide the lib
 from autocomplete. To do this, you name the library file with ~~ at the beginning of the filename, like `~~mylibrary.sh`
@@ -39,7 +43,6 @@ from autocomplete. To do this, you name the library file with ~~ at the beginnin
 ### First
 - [ ] check for fail-messages and/or errors in gitcurl
 - [ ] --upgrade should check installed location of completion file
-- [ ] pass along a ENV with the directory from which gist was called (pwd) as GIST_CALL_PWD
 
 ### Later
 - [ ] upload a update to an existing gist ` > gist -U file.sh` (or check for a file with the same name when uploading?)
