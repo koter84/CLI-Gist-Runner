@@ -573,6 +573,15 @@ then
 		application/x-httpd-php)
 			cmd="php $gist_command"
 		;;
+		application/x-perl)
+			cmd="perl $gist_command"
+		;;
+		application/x-python)
+			cmd="python $gist_command"
+		;;
+		application/x-ruby)
+			cmd="ruby $gist_command"
+		;;
 		application/x-sh)
 			cmd="bash $gist_command"
 		;;
