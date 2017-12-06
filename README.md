@@ -46,6 +46,7 @@ from autocomplete. To do this, you name the library file with ~~ at the beginnin
 
 ### Later
 - [ ] upload a update to an existing gist ` > gist -U file.sh` (or check for a file with the same name when uploading?)
+- [ ] link other peoples scripts to your account so you can ` gist script.sh` instead of ` gist -o user script.sh` without forking and having to keep the script up-to-date
 
 ## ToRead
 - (1) http://stedolan.github.io/jq/tutorial/
