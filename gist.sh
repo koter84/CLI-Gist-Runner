@@ -25,7 +25,25 @@ function gist_dl
 {
 	local cmd="curl $curl_opts -u $token:x-oauth-basic $url$1"
 	#echo "$cmd"
-	local gist_tmp=$($cmd)
+
+	local gist_tmp_page=$(${cmd} -I | grep '^Link:' | sed -e 's/^Link:.*page=//g' -e 's/>.*$//g')
+	if [ "${gist_tmp_page}" != "" ]
+	then
+		# multipage...
+		local temp1=$(mktemp)
+		local temp2=$(mktemp)
+		local temp3=$(mktemp)
+
+	    for p in `seq 1 $gist_tmp_page`
+		do
+			local gist_tmp=$(${cmd}?page=${p})
+			echo "${gist_tmp}" > ${temp2}
+			jq -s add ${temp1} ${temp2} > ${temp3}
+			mv ${temp3} ${temp1}
+		done
+	else
+		local gist_tmp=$($cmd)
+	fi
 
 # ToDo - catching errors
 #	echo "$gist_tmp" | jq '.error' ????
