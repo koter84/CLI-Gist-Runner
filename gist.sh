@@ -41,6 +41,7 @@ function gist_dl
 			jq -s add ${temp1} ${temp2} > ${temp3}
 			mv ${temp3} ${temp1}
 		done
+		gist_tmp=$(cat ${temp1})
 	else
 		local gist_tmp=$($cmd)
 	fi
@@ -323,6 +324,10 @@ then
 		cache_file="/tmp/gistCache_starred"
 		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
 		then
+			echo "/tmp/gist_temp"
+			gist_dl /gists > /tmp/gist_temp
+			cat /tmp/gist_temp
+			exit
 			gist_dl /gists | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
 		fi
 		cat ${cache_file}
