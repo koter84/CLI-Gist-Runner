@@ -324,10 +324,6 @@ then
 		cache_file="/tmp/gistCache_starred"
 		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
 		then
-			echo "/tmp/gist_temp"
-			gist_dl /gists > /tmp/gist_temp
-			cat /tmp/gist_temp
-			exit
 			gist_dl /gists | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
 		fi
 		cat ${cache_file}
