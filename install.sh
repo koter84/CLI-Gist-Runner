@@ -53,8 +53,13 @@ fi
 # ToDo - find existing completion file
 if [ "$gist_completionsdir" == "" ]
 then
-	echo "no bash-completion dir found"
-	exit
+	if [ -d /etc/bash_completion.d ]
+	then
+		gist_completionsdir="/etc/bash_completion.d"
+	else
+		echo "no bash-completion dir found"
+		exit
+	fi
 fi
 
 ## Get Latest Tag ##

@@ -84,7 +84,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.5.3"
+			echo "v1.5.4"
 			exit
 		;;
 		-h|--help)
@@ -510,7 +510,7 @@ then
 		check_cmd=$($0 --ac-starred|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
-			echo "command seems wrong"
+			echo "command seems wrong [starred]"
 			echo "$gist_command"
 			echo "$check_cmd"
 		fi
@@ -531,7 +531,7 @@ then
 		check_cmd=$($0 --ac-gist "$gist_otheruser_name"|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
-			echo "command seems wrong"
+			echo "command seems wrong [otheruser]"
 			echo "$gist_command"
 			echo "$check_cmd"
 		fi
@@ -544,9 +544,12 @@ then
 		check_cmd=$($0 --ac-gist|grep "$gist_command")
 		if [ "$check_cmd" != "$gist_command" ]
 		then
-			echo "command seems wrong"
+			echo "command seems wrong [cmd]"
 			echo "$gist_command"
 			echo "$check_cmd"
+
+			$0 --ac-gist
+
 		fi
 
 		# get the gist-id
