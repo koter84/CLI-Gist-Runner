@@ -311,20 +311,52 @@ then
 	cache_time="+1"
 	if [ "$gistac_gist_user" != "" ]
 	then
-		gist_dl "/users/${gistac_gist_user}/gists" | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g'
+		page=1
+		while true
+		do
+			result=$(gist_dl "/users/${gistac_gist_user}/gists?page=${page}" | jq '.')
+			if [ "${result}" == "[]" ]
+			then
+				break
+			fi
+			echo "${result}" | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' >> ${cache_file}
+			let page+=1
+		done
 	elif [ "$gistac_gist_starred" == "1" ]
 	then
-		cache_file="/tmp/gistCache_mygists"
-		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
-		then
-			gist_dl /gists/starred | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
-		fi
-		cat ${cache_file}
-	else
 		cache_file="/tmp/gistCache_starred"
 		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
 		then
-			gist_dl /gists | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' > ${cache_file}
+			echo -n > ${cache_file}
+			page=1
+			while true
+			do
+				result=$(gist_dl "/gists/starred?page=${page}" | jq '.')
+				if [ "${result}" == "[]" ]
+				then
+					break
+				fi
+				echo "${result}" | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' >> ${cache_file}
+				let page+=1
+			done
+		fi
+		cat ${cache_file}
+	else
+		cache_file="/tmp/gistCache_mygists"
+		if [ ! -f ${cache_file} ] || [ "$(find ${cache_file} -mmin ${cache_time})" != "" ]
+		then
+			echo -n > ${cache_file}
+			page=1
+			while true
+			do
+				result=$(gist_dl "/gists?page=${page}" | jq '.')
+				if [ "${result}" == "[]" ]
+				then
+					break
+				fi
+				echo "${result}" | jq '.[].files[].filename' | grep -v '^"~~' | sed 's/\"//g' | sed 's/\n/ /g' >> ${cache_file}
+				let page+=1
+			done
 		fi
 		cat ${cache_file}
 	fi
@@ -436,7 +468,21 @@ then
 	gist_tmp=$(mktemp -dt cligistedit-XXXXXX)
 
 	# get gist-id for cloning
-	gist_id=$(gist_dl /gists | jq '.[] | if .files[].filename == "'"$gist_edit_name"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+	page=1
+	while true
+	do
+		result=$(gist_dl "/gists?page=${page}" | jq '.')
+		if [ "${result}" == "[]" ]
+		then
+			break
+		fi
+		gist_id=$(echo "${result}" | jq '.[] | if .files[].filename == "'"$gist_edit_name"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		if [ "${gist_id}" != "" ]
+		then
+			break
+		fi
+		let page+=1
+	done
 
 	# git clone
 	git clone -q git@gist.github.com:${gist_id}.git $gist_tmp
@@ -516,7 +562,21 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(gist_dl /gists/starred | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		page=1
+		while true
+		do
+			result=$(gist_dl "/gists/starred?page=${page}" | jq '.')
+			if [ "${result}" == "[]" ]
+			then
+				break
+			fi
+			gist_id=$(echo "${result}" | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+			if [ "${gist_id}" != "" ]
+			then
+				break
+			fi
+			let page+=1
+		done
 
 	elif [ "$gist_otheruser" == "1" ]
 	then
@@ -537,7 +597,21 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(gist_dl "/users/${gist_otheruser_name}/gists" | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		page=1
+		while true
+		do
+			result=$(gist_dl "/users/${gist_otheruser_name}/gists?page=${page}" | jq '.')
+			if [ "${result}" == "[]" ]
+			then
+				break
+			fi
+			gist_id=$(echo "${result}" | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+			if [ "${gist_id}" != "" ]
+			then
+				break
+			fi
+			let page+=1
+		done
 
 	else # your own gist
 
@@ -553,7 +627,21 @@ then
 		fi
 
 		# get the gist-id
-		gist_id=$(gist_dl /gists | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+		page=1
+		while true
+		do
+			result=$(gist_dl "/gists?page=${page}" | jq '.')
+			if [ "${result}" == "[]" ]
+			then
+				break
+			fi
+			gist_id=$(echo "${result}" | jq '.[] | if .files[].filename == "'"$gist_command"'" then .id else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+			if [ "${gist_id}" != "" ]
+			then
+				break
+			fi
+			let page+=1
+		done
 
 	fi
 
