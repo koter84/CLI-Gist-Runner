@@ -84,7 +84,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.5.5"
+			echo "v1.5.6"
 			exit
 		;;
 		-h|--help)
@@ -308,7 +308,7 @@ fi
 
 if [ "$gistac_gist" == "1" ]
 then
-	cache_time="+1"
+	cache_time="+1440"
 	if [ "$gistac_gist_user" != "" ]
 	then
 		page=1
