@@ -84,7 +84,7 @@ do
 			exit
 		;;
 		--version)
-			echo "v1.5.6"
+			echo "v1.6.0"
 			exit
 		;;
 		-h|--help)
@@ -94,30 +94,50 @@ do
 			echo ""
 			echo "$0 [options] [script-name] [options for your gist-script]"
 			echo ""
-			echo "    -e script-name      edit a gist-script on local machine"
-			echo "    -o username         execute another user's gist"
-			echo "    -r user@server      execute gist on remote server via ssh"
-			echo "    -s                  execute a starred gist"
-			echo "    -u file|directory   upload a file or directory to gist (default with piped input)"
-			echo "    -w[seconds]         execute a gist using watch"
-			echo "    -x                  execute gist with sudo"
+			echo "    -d script-name download-dir   edit a gist-script on local machine"
+			echo "    -e script-name                edit a gist-script on local machine"
+			echo "    -o username                   execute another user's gist"
+			echo "    -r user@server                execute gist on remote server via ssh"
+			echo "    -s                            execute a starred gist"
+			echo "    -u file|directory             upload a file or directory to gist (default with piped input)"
+			echo "    -w[seconds]                   execute a gist using watch"
+			echo "    -x                            execute gist with sudo"
 			echo ""
-			echo "    --upgrade           upgrade gist.sh (this script)"
-			echo "    --version           version information"
-			echo "    -h --help           this help text"
-			echo "    --setup             setup and configure your GitHub-access-token"
+			echo "    --upgrade                     upgrade gist.sh (this script)"
+			echo "    --version                     version information"
+			echo "    -h --help                     this help text"
+			echo "    --setup                       setup and configure your GitHub-access-token"
 			echo ""
 			echo " these options are used by bash-autocompletion so you don't need to be root to update the autocomplete-file"
-			echo "    --ac-test           execute a couple of --ac-* actions to get a timing"
-			echo "    --ac-opts           output a list of arguments that gist accepts"
-			echo "    --ac-gist [user]    output a list of gists for [user], default for authenticated user"
-			echo "    --ac-starred        output a list of starred gists for authenticated user"
-			echo "    --ac-user %user%    output a list of users from github"
+			echo "    --ac-test                     execute a couple of --ac-* actions to get a timing"
+			echo "    --ac-opts                     output a list of arguments that gist accepts"
+			echo "    --ac-gist [user]              output a list of gists for [user], default for authenticated user"
+			echo "    --ac-starred                  output a list of starred gists for authenticated user"
+			echo "    --ac-user %user%              output a list of users from github"
 			echo ""
 			exit
 		;;
 		--setup)
 			gist_setup=1
+		;;
+		-d)
+			gist_download=1
+			if [[ "$2" != -* ]] && [ "$2" != "" ]
+			then
+				gist_command="$2"
+				if [[ "$3" != -* ]] && [ "$3" != "" ]
+				then
+					gist_download_dir="$3"
+				else
+					echo "-d expects a gist script-name and download-dir"
+					exit
+				fi
+				shift
+				shift
+			else
+				echo "-d expects a gist script-name and download-dir"
+				exit
+			fi
 		;;
 		-e)
 			gist_edit=1
@@ -231,7 +251,7 @@ do
 	shift
 done
 
-if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gist_edit" != "1" ] && [ "$gist_setup" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
+if [ "$gist_command" == "" ] && [ "$gist_upload" != "1" ] && [ "$gist_download" != "1" ] && [ "$gist_edit" != "1" ] && [ "$gist_setup" != "1" ] && [ "$gistac_gist" != "1" ] && [ "$gistac_user" != "1" ] && [ "$gistac_test" != "1" ]
 then
 	echo "you must give a command to execute"
 	$0 --help
@@ -651,8 +671,15 @@ then
 		# setup environment variables
 		export GIST_PWD=$(pwd)
 
-		# make tmp-dir
-		gist_tmp=$(mktemp -dt cligist-XXXXXX)
+		# make temp-dir
+		if [ "$gist_download" == "1" ]
+		then
+			gist_edit_name=$gist_download_name
+			gist_tmp=$gist_download_dir
+			mkdir -p ${gist_tmp}
+		else
+			gist_tmp=$(mktemp -dt cligist-XXXXXX)
+		fi
 		if [ ! -d "$gist_tmp" ]
 		then
 			echo "tmp-dir not created...."
@@ -669,69 +696,71 @@ then
 			chmod +x "$file"
 		done
 
-		# detect file-type
-		gist_command_type=$(gist_dl "/gists/$gist_id" | jq '.files[] | if .filename == "'"$gist_command"'" then .type else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
-
-		# goto tmp-dir
-		cd "$gist_tmp"
-
-		# add extra arguments to command
-		gist_command="$gist_command $gist_command_arguments"
-
-		# build command to execute...
-		case $gist_command_type in
-		application/x-httpd-php)
-			cmd="php $gist_command"
-		;;
-		application/x-perl)
-			cmd="perl $gist_command"
-		;;
-		application/x-python)
-			cmd="python $gist_command"
-		;;
-		application/x-ruby)
-			cmd="ruby $gist_command"
-		;;
-		application/x-sh)
-			cmd="bash $gist_command"
-		;;
-		text/plain)
-			cmd="cat $gist_command"
-		;;
-		*)
-			echo "> command type not implemented: $gist_command_type"
-			exit
-		;;
-		esac
-
-		if [ "$gist_watch" != "" ]
+		if [ "$gist_download" != "1" ]
 		then
-			cmd="watch -n$gist_watch $cmd"
+			# detect file-type
+			gist_command_type=$(gist_dl "/gists/$gist_id" | jq '.files[] | if .filename == "'"$gist_command"'" then .type else null end' | grep -ve '^null$' | sed 's/\"//g' | sed 's/\n/ /g')
+
+			# goto tmp-dir
+			cd "$gist_tmp"
+
+			# add extra arguments to command
+			gist_command="$gist_command $gist_command_arguments"
+
+			# build command to execute...
+			case $gist_command_type in
+			application/x-httpd-php)
+				cmd="php $gist_command"
+			;;
+			application/x-perl)
+				cmd="perl $gist_command"
+			;;
+			application/x-python)
+				cmd="python $gist_command"
+			;;
+			application/x-ruby)
+				cmd="ruby $gist_command"
+			;;
+			application/x-sh)
+				cmd="bash $gist_command"
+			;;
+			text/plain)
+				cmd="cat $gist_command"
+			;;
+			*)
+				echo "> command type not implemented: $gist_command_type"
+				exit
+			;;
+			esac
+
+			if [ "$gist_watch" != "" ]
+			then
+				cmd="watch -n$gist_watch $cmd"
+			fi
+
+			if [ "$gist_root" == "1" ]
+			then
+				cmd="sudo $cmd"
+			fi
+
+			# execute command
+			if [ "$gist_remote" == "1" ]
+			then
+				#echo "> going remote: $gist_remote_name"
+				rsync="rsync --recursive ./ $gist_remote_name:$gist_tmp"
+				#echo "> cmd: $rsync"
+				eval "$rsync"
+				cmd="ssh $gist_remote_name 'hostname; cd $gist_tmp; $cmd; rm -r $gist_tmp'"
+				#echo "> cmd: $cmd"
+				eval "$cmd"
+			else
+				#echo "> cmd: $cmd"
+				eval "$cmd"
+			fi
+
+			# remove tmp-dir
+			rm -r "$gist_tmp"
 		fi
-
-		if [ "$gist_root" == "1" ]
-		then
-			cmd="sudo $cmd"
-		fi
-
-		# execute command
-		if [ "$gist_remote" == "1" ]
-		then
-			#echo "> going remote: $gist_remote_name"
-			rsync="rsync --recursive ./ $gist_remote_name:$gist_tmp"
-			#echo "> cmd: $rsync"
-			eval "$rsync"
-			cmd="ssh $gist_remote_name 'hostname; cd $gist_tmp; $cmd; rm -r $gist_tmp'"
-			#echo "> cmd: $cmd"
-			eval "$cmd"
-		else
-			#echo "> cmd: $cmd"
-			eval "$cmd"
-		fi
-
-		# remove tmp-dir
-		rm -r "$gist_tmp"
-
 	else
 		echo "> problem! no gist-id..."
 		exit
